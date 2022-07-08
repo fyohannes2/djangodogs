@@ -1,4 +1,4 @@
-*{
+* {
     box-sizing: border-box;
     margin: 0;
 }
@@ -10,7 +10,7 @@ body {
 }
 
 main {
-    flex: grow 1;
+    flex: 1 0 auto;
 }
 
 footer {

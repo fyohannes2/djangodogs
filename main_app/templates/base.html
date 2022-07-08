@@ -2,16 +2,18 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Materialize -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" />
-    <!-- Link to static CSS -->
-    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}" />
-    <title>Vinyl Collector</title>
-</head>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <title>Vinyl Collector</title>
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+        />
+        <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+      </head>
 
 <body>
     <header class="navbar-fixed">
@@ -23,8 +25,16 @@
                     </li>
                 </ul>
                 <ul class="right">
-                    <li><a href="/about">About</a></li>
-                    <li><a href="/vinyls">View All My Vinyls</a></li>
+                    <li><a href="{% url 'about' %}">About</a></li>
+                    {% if user.is_authenticated %}
+                    <li><a href="{% url 'vinyls_create' %}">Add a Vinyl</a></li>
+                    <li><a href="{% url 'index' %}">View All My Vinyls</a></li>
+                    <li><a href="{% url 'toys_index' %}">View All Toys</a></li>
+                    <li><a href="{% url 'toys_create' %}">Add a Toy</a></li>
+                    <li><a href="{% url 'logout' %}">Logout</a></li>
+                    {% else %}
+                    <li><a href="{% url 'login' %}">Login</a></li>
+                     {% endif %}
                 </ul>
             </div>
         </nav>
