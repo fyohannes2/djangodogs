@@ -39,7 +39,7 @@ def vinyls_detail(request, vinyl_id):
   toys_vinyl_doesnt_have = Toy.objects.exclude(id__in = vinyl.toys.all().values_list('id'))
   
   return render(request, 'vinyls/detail.html', {
-    # include the cat and feeding_form in the context
+    # include the vinyl and feeding_form in the context
     'vinyl': vinyl, 'playing_form': playing_form,
     'toys': toys_vinyl_doesnt_have
   })
@@ -50,7 +50,7 @@ def add_playing(request, vinyl_id):
   # validate the form
   if form.is_valid():
     # don't save the form to the db until it
-    # has the cat_id assigned
+    # has the vinyl_id assigned
     new_playing = form.save(commit=False)
     new_playing.vinyl_id = vinyl_id
     new_playing.save()
@@ -65,7 +65,7 @@ def assoc_toy_delete(request, vinyl_id, toy_id):
   Vinyl.objects.get(id=vinyl_id).toys.remove(toy_id)
   return redirect('detail', vinyl_id=vinyl_id)
 
-def add_photo(request, cat_id):
+def add_photo(request, vinyl_id):
   # attempt to collect the photo file data
   photo_file = request.FILES.get('photo-file', None)
   # use conditional logic to determine if file is present
@@ -81,15 +81,15 @@ def add_photo(request, cat_id):
       s3.upload_fileobj(photo_file, BUCKET, key)
       # take the exchanged url and save it to the database
       url = f"{S3_BASE_URL}{BUCKET}/{key}"
-      # 1) create photo instance with photo model and provide cat_id as foreign key val
-      photo = Photo(url=url, cat_id=cat_id)
+      # 1) create photo instance with photo model and provide vinyl_id as foreign key val
+      photo = Photo(url=url, vinyl_id=vinyl_id)
       # 2) save the photo instance to the database
       photo.save()
     except Exception as error:
       print("Error uploading photo: ", error)
-      return redirect('detail', cat_id=cat_id)
+      return redirect('detail', vinyl_id=vinyl_id)
     # print an error message
-  return redirect('detail', cat_id=cat_id)
+  return redirect('detail', vinyl_id=vinyl_id)
   # redirect the user to the origin 
 
 class VinylCreate(CreateView):
@@ -97,9 +97,14 @@ class VinylCreate(CreateView):
   fields = ['name', 'genre', 'description', 'age']
   success_url = '/vinyls/'
 
+def form_valid(self, form):
+  form.instance.user = self.request.user
+  return super().form_valid(form)
+
+
 class VinylUpdate(UpdateView):
   model = Vinyl
-  # Let's disallow the renaming of a cat by excluding the name field!
+  # Let's disallow the renaming of a vinyl by excluding the name field!
   fields = ['genre', 'description', 'age']
 
 class VinylDelete(DeleteView):
