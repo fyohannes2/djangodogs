@@ -1,15 +1,19 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
-from .models import Vinyl, Toy, Photo
-from .forms import PlayingForm
+from django.contrib.auth import login
+from django.contrib.auth.forms import UserCreationForm
+from .models import Dog, Toy, Photo
+from .forms import FeedingForm
 
 import uuid
-import boto3 
+import boto3
 
 S3_BASE_URL = 'https://s3.us-east-1.amazonaws.com/'
-BUCKET = 'vinylcollector-avatar-9'
+BUCKET = 'vinylcollector-avatar-99'
 
 
 
@@ -29,43 +33,47 @@ def home(request):
 def about(request):
   return render(request, 'about.html')
 
-def vinyls_index(request):
-  vinyls = Vinyl.objects.all()
-  return render(request, 'vinyls/index.html', { 'vinyls': vinyls })
+@login_required
+def dogs_index(request):
+  dogs = Dog.objects.filter(user=request.user)
+  return render(request, 'dogs/index.html', { 'dogs': dogs })
 
-def vinyls_detail(request, vinyl_id):
-  vinyl = Vinyl.objects.get(id=vinyl_id)
-  playing_form = PlayingForm()
-  toys_vinyl_doesnt_have = Toy.objects.exclude(id__in = vinyl.toys.all().values_list('id'))
-  
-  return render(request, 'vinyls/detail.html', {
-    # include the vinyl and feeding_form in the context
-    'vinyl': vinyl, 'playing_form': playing_form,
-    'toys': toys_vinyl_doesnt_have
+@login_required
+def dogs_detail(request, dog_id):
+  dog = Dog.objects.get(id=dog_id)
+  feeding_form = FeedingForm()
+  toys_dog_doesnt_have = Toy.objects.exclude(id__in = dog.toys.all().values_list('id'))
+  return render(request, 'dogs/detail.html', {
+    # include the cat and feeding_form in the context
+    'dog': dog, 'feeding_form': feeding_form,
+    'toys': toys_dog_doesnt_have
   })
 
-def add_playing(request, vinyl_id):
+@login_required
+def add_feeding(request, dog_id):
   # create the ModelForm using the data in request.POST
-  form = PlayingForm(request.POST)
+  form = FeedingForm(request.POST)
   # validate the form
   if form.is_valid():
     # don't save the form to the db until it
-    # has the vinyl_id assigned
-    new_playing = form.save(commit=False)
-    new_playing.vinyl_id = vinyl_id
-    new_playing.save()
-  return redirect('detail', vinyl_id=vinyl_id)
+    # has the cat_id assigned
+    new_feeding = form.save(commit=False)
+    new_feeding.dog_id = dog_id
+    new_feeding.save()
+  return redirect('detail', dog_id=dog_id)
 
+@login_required
+def assoc_toy(request, dog_id, toy_id):
+  Dog.objects.get(id=dog_id).toys.add(toy_id)
+  return redirect('detail', dog_id=dog_id)
 
-def assoc_toy(request, vinyl_id, toy_id):
-  Vinyl.objects.get(id=vinyl_id).toys.add(toy_id)
-  return redirect('detail', vinyl_id=vinyl_id)
+@login_required
+def assoc_toy_delete(request, dog_id, toy_id):
+  Dog.objects.get(id=dog_id).toys.remove(toy_id)
+  return redirect('detail', dog_id=dog_id)
 
-def assoc_toy_delete(request, vinyl_id, toy_id):
-  Vinyl.objects.get(id=vinyl_id).toys.remove(toy_id)
-  return redirect('detail', vinyl_id=vinyl_id)
-
-def add_photo(request, vinyl_id):
+@login_required
+def add_photo(request, dog_id):
   # attempt to collect the photo file data
   photo_file = request.FILES.get('photo-file', None)
   # use conditional logic to determine if file is present
@@ -81,54 +89,90 @@ def add_photo(request, vinyl_id):
       s3.upload_fileobj(photo_file, BUCKET, key)
       # take the exchanged url and save it to the database
       url = f"{S3_BASE_URL}{BUCKET}/{key}"
-      # 1) create photo instance with photo model and provide vinyl_id as foreign key val
-      photo = Photo(url=url, vinyl_id=vinyl_id)
+      # 1) create photo instance with photo model and provide cat_id as foreign key val
+      photo = Photo(url=url, dog_id=dog_id)
       # 2) save the photo instance to the database
       photo.save()
     except Exception as error:
       print("Error uploading photo: ", error)
-      return redirect('detail', vinyl_id=vinyl_id)
+      return redirect('detail', dog_id=dog_id)
     # print an error message
-  return redirect('detail', vinyl_id=vinyl_id)
+  return redirect('detail', dog_id=dog_id)
   # redirect the user to the origin 
+  """
+    check if the request method is POST,
+    we need to create a new user because from was submitted
+    
+    1) use the form data from the request to create a form/model instance from the model form
+    2) validate the form to ensure it was completed
+      2.2) if form not valid - redirect the user to the signup page with an error message
+    3) saving the user object to the database
+    4) login the user (creates a session for the logged in user in the database)
+    5) redirect the user to the cats index page
+  """
 
-class VinylCreate(CreateView):
-  model = Vinyl
-  fields = ['name', 'genre', 'description', 'age']
-  success_url = '/vinyls/'
+  """
+    else the request is GET == the user clicked on the signup link
+    1) create a blank instance of the model form
+    2) provide that form instance to a registration template
+    3) render the template so the user can fill out the form
+  """
 
-def form_valid(self, form):
-  form.instance.user = self.request.user
-  return super().form_valid(form)
+def signup(request):
+  error_messages = ''
+  if request.method == 'POST':
+    form = UserCreationForm(request.POST)
+    if form.is_valid():
+      user = form.save()
+      login(request, user)
+      return redirect('index')
+    else:
+      error_messages = 'Invalid Info - Please Try Again'
+  form = UserCreationForm()
+  context = {
+    'form': form, 
+    'error_messages': error_messages
+  }
+  return render(request, 'registration/signup.html', context)
 
 
-class VinylUpdate(UpdateView):
-  model = Vinyl
-  # Let's disallow the renaming of a vinyl by excluding the name field!
-  fields = ['genre', 'description', 'age']
 
-class VinylDelete(DeleteView):
-  model = Vinyl
-  success_url = '/vinyls/'
+class DogCreate(LoginRequiredMixin, CreateView):
+  model = Dog
+  fields = ['name', 'breed', 'description', 'age']
+  success_url = '/dogs/'
 
-class ToyList(ListView):
+  def form_valid(self, form):
+    form.instance.user = self.request.user
+    return super().form_valid(form)
+
+class DogUpdate(LoginRequiredMixin, UpdateView):
+  model = Dog
+  # Let's disallow the renaming of a cat by excluding the name field!
+  fields = [ 'breed', 'description', 'age']
+
+class DogDelete(LoginRequiredMixin, DeleteView):
+  model = Dog
+  success_url = '/dogs/'
+
+class ToyList(LoginRequiredMixin, ListView):
   model = Toy
   template_name = 'toys/index.html'
 
-class ToyDetail(DetailView):
+class ToyDetail(LoginRequiredMixin, DetailView):
   model = Toy
   template_name = 'toys/detail.html'
 
-class ToyCreate(CreateView):
+class ToyCreate(LoginRequiredMixin, CreateView):
     model = Toy
     fields = ['name', 'color']
 
 
-class ToyUpdate(UpdateView):
+class ToyUpdate(LoginRequiredMixin, UpdateView):
     model = Toy
     fields = ['name', 'color']
 
 
-class ToyDelete(DeleteView):
+class ToyDelete(LoginRequiredMixin, DeleteView):
     model = Toy
     success_url = '/toys/'

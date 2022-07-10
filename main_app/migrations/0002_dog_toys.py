@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='vinyl',
+            model_name='cat',
             name='toys',
             field=models.ManyToManyField(to='main_app.toy'),
         ),

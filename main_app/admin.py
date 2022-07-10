@@ -1,11 +1,11 @@
 from django.contrib import admin
 # import your models here
-from .models import Vinyl, Playing, Toy, Photo 
+from .models import Dog, Feeding, Toy, Photo
 
-# make sure to register the model
-admin.site.register(Vinyl)
+# Register your models here
+admin.site.register(Dog)
 
-admin.site.register(Playing)
+admin.site.register(Feeding)
 
 admin.site.register(Toy)
 

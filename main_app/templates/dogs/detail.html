@@ -1,51 +1,51 @@
 {% extends 'base.html' %} {% block content %}
 
-<h1>Vinyl Details</h1>
+<h1>Dogs Details</h1>
 
 <div class="row">
   <div class="col s6">
     <div class="card">
       <div class="card-content">
-        <span class="card-title">{{ vinyl.name }}</span>
-        <p>Genre: {{ vinyl.genre }}</p>
-        <p>Description: {{ vinyl.description }}</p>
-        {% if vinyl.age > 0 %}
-        <p>Age: {{ vinyl.age }}</p>
+        <span class="card-title">{{ .name }}</span>
+        <p>Breed: {{ dog.breed }}</p>
+        <p>Description: {{ dog.description }}</p>
+        {% if dog.age > 0 %}
+        <p>Age: {{ dog.age }}</p>
         {% else %}
-        <p>Age: Vintage</p>
+        <p>Age: Puppy</p>
         {% endif %}
       </div>
       <div class="card-action">
-        <a href="{% url 'vinyls_update' vinyl.id %}">Edit</a>
-        <a href="{% url 'vinyls_delete' vinyl.id %}">Delete</a>
+        <a href="{% url 'dogs_update' dog.id %}">Edit</a>
+        <a href="{% url 'dogs_delete' dog.id %}">Delete</a>
       </div>
     </div>
-    <form action="{% url 'add_playing' vinyl.id %}" method="post">
-      {% csrf_token %} {{ playing_form.as_p }}
-      <input type="submit" class="btn" value="Add Playing" />
+    <form action="{% url 'add_feeding' dog.id %}" method="post">
+      {% csrf_token %} {{ feeding_form.as_p }}
+      <input type="submit" class="btn" value="Add Feeding" />
     </form>
     <br />
-    {% if vinyl.played_for_today %}
+    {% if dog.fed_for_today %}
     <div class="card-panel teal-text center-align">
-      {{play.name}} has been played all plays for today
+      {{dog.name}} has been fed all meals for today
     </div>
     {% else %}
     <div class="card-panel red-text center-align">
-      {{play.name}} might be hungry
+      {{dog.name}} might be hungry
     </div>
     {% endif %}
-    {% for photo in vinyl.photo_set.all %}
-      <img class="responsive-img card-panel" src="{{photo.url}}" alt="{{vinyl.name}}">
-    {% empty %} 
+    {% for photo in dog.photo_set.all %}
+      <img class="responsive-img card-panel" src="{{ photo.url }}" alt="{{ dog.name }}">
+    {% empty %}
       <div class="card-panel teal-text center-align">No Photos Uploaded</div>
     {% endfor %}
     <form 
-      action="{% url 'add_photo' vinyl.id %}" 
+      action="{% url 'add_photo' dog.id %}" 
       class="card-panel"
       method="POST"
-      enctype="multipart/form-data" 
-     >
-     {% csrf_token %} 
+      enctype="multipart/form-data"
+    >
+      {% csrf_token %}
       <input type="file" name="photo-file" />
       <br />
       <br />
@@ -57,14 +57,14 @@
       <thead>
         <tr>
           <th>Date</th>
-          <th>Play</th>
+          <th>Meal</th>
         </tr>
       </thead>
       <tbody>
-        {% for playing in vinyl.playing_set.all %}
+        {% for feeding in dog.feeding_set.all %}
         <tr>
-          <td>{{playing.date}}</td>
-          <td>{{playing.get_play_display}}</td>
+          <td>{{feeding.date}}</td>
+          <td>{{feeding.get_meal_display}}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -74,8 +74,8 @@
 <hr />
 <div class="row">
   <div class="col s6">
-    <h3>{{ vinyl.name }}'s Toys</h3>
-    {% if vinyl.toys.count %} {% for toy in vinyl.toys.all %}
+    <h3>{{ dog.name }}'s Toys</h3>
+    {% if dog.toys.count %} {% for toy in dog.toys.all %}
     <div class="card">
       <div class="card-content">
         <span class="card-title">
@@ -84,7 +84,7 @@
         </span>
       </div>
       <div class="card-action">
-        <form action="{% url 'assoc_toy_delete' cat.id toy.id %}" method="post">
+        <form action="{% url 'assoc_toy_delete' dog.id toy.id %}" method="post">
           {% csrf_token %}
           <button type="submit" class="btn">Remove</button>
         </form>
@@ -105,14 +105,14 @@
         </span>
       </div>
       <div class="card-action">
-        <form action="{% url 'assoc_toy' vinyl.id toy.id %}" method="post">
+        <form action="{% url 'assoc_toy' dog.id toy.id %}" method="post">
           {% csrf_token %}
           <button type="submit" class="btn">Add</button>
         </form>
       </div>
     </div>
     {% endfor %} {% else %}
-    <h5>{{vinyl.name}} Already Has All Toys Available</h5>
+    <h5>{{dog.name}} Already Has All Toys Available</h5>
     {% endif %}
   </div>
 
@@ -125,7 +125,7 @@
       autoClose: true,
     });
 
-    var selectEl = document.getElementById("id_play");
+    var selectEl = document.getElementById("id_meal");
     M.FormSelect.init(selectEl);
   </script>
   {% endblock %}

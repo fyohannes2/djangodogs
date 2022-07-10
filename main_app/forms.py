@@ -1,7 +1,7 @@
 from django.forms import ModelForm
-from .models import Playing
+from .models import Feeding
 
-class PlayingForm(ModelForm):
+class FeedingForm(ModelForm):
   class Meta:
-    model = Playing
-    fields = ['date', 'play']
+    model = Feeding
+    fields = ['date', 'meal']
