@@ -33,6 +33,8 @@ def home(request):
 def about(request):
   return render(request, 'about.html')
 
+
+
 @login_required
 def dogs_index(request):
   dogs = Dog.objects.filter(user=request.user)
@@ -89,7 +91,7 @@ def add_photo(request, dog_id):
       s3.upload_fileobj(photo_file, BUCKET, key)
       # take the exchanged url and save it to the database
       url = f"{S3_BASE_URL}{BUCKET}/{key}"
-      # 1) create photo instance with photo model and provide cat_id as foreign key val
+      # 1) create photo instance with photo model and provide dog_id as foreign key val
       photo = Photo(url=url, dog_id=dog_id)
       # 2) save the photo instance to the database
       photo.save()
